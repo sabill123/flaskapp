@@ -1,51 +1,81 @@
 pipeline {
 
-   agent any
+    agent any
 
-   parameters {
+    environment {
 
-      choice(name: 'VERSION', choices: ['1.1.0','1.2.0','1.3.0'], description: '')
+        DOCKER_USER_ID = credentials('docker_user_id')  // Jenkins Credential ID
 
-      booleanParam(name: 'executeTests', defaultValue: true, description: '')
+        DOCKER_PASSWORD = credentials('docker_token')   // Jenkins Credential ID
 
-   }
+    }
 
-   stages {
 
-      stage("Build") {
 
-         steps {
+    stages {
 
-               sh 'docker build -t flask-jenkins:v1.0.0 .'
+        stage('Build') {
 
-         }
+            steps {
 
-      }
+                echo 'Building the application...'
 
-      stage("Tag and Push") {
+                sh 'make build'
 
-         steps {
+            }
 
-              sh "docker tag jenkins-pipeline_web:latest ${DOCKER_USER_ID}/jenkins-app:${BUILD_NUMBER}"
+        }
 
-               sh "docker login -u ${DOCKER_USER_ID}-p ${DOCKER_USER_PASSWORD}"
+        stage('Test') {
 
-               sh "docker push ${DOCKER_USER_ID}/jenkins-app:${BUILD_NUMBER}"
+            steps {
 
-         }
+                echo 'Testing the application...'
 
-      }
+                sh 'make test'
 
-      stage("deploy") {
+            }
 
-         steps {
+        }
 
-               echo 'deploying the applicaiton...'
+        stage('Deploy') {
 
-         }
+            steps {
 
-      }
+                echo 'Deploying the application...'
 
-   }
+                sh 'make deploy'
+
+            }
+
+        }
+
+    }
+
+
+
+    post {
+
+        always {
+
+            echo 'This will always run'
+
+        }
+
+        success {
+
+            echo 'This will run only if successful'
+
+        }
+
+        failure {
+
+            echo 'This will run only if failed'
+
+        }
+
+    }
 
 }
+
+
