@@ -1,81 +1,85 @@
 pipeline {
 
-    agent any
+	agent any
 
-    environment {
+	parameters {
 
-        DOCKER_USER_ID = credentials('docker_user_id')  // Jenkins Credential ID
+		choice(name: 'VERSION', choices: ['1.1.0','1.2.0','1.3.0'], description: '')
 
-        DOCKER_PASSWORD = credentials('docker_token')   // Jenkins Credential ID
+		booleanParam(name: 'executeTests', defaultValue: true, description: '')
 
-    }
+	}
 
+	stages {
 
+		stage("init") {
 
-    stages {
+			steps {
 
-        stage('Build') {
+				script {
 
-            steps {
+					gv = load "script.groovy"
 
-                echo 'Building the application...'
+				}
 
-                sh 'make build'
+			}
 
-            }
+		}
 
-        }
+		stage("Checkout") {
 
-        stage('Test') {
+			steps {
 
-            steps {
+				checkout scm
 
-                echo 'Testing the application...'
+			}
 
-                sh 'make test'
+		}
 
-            }
+		stage("Build") {
 
-        }
+			steps {
 
-        stage('Deploy') {
+				sh 'docker build -t flaskjenkins:v1.0.0 .'
 
-            steps {
+			}
 
-                echo 'Deploying the application...'
+		}
 
-                sh 'make deploy'
+		stage("test") {
 
-            }
+			when {
 
-        }
+				expression {
 
-    }
+					params.executeTests
 
+				}
 
+			}
 
-    post {
+			steps {
 
-        always {
+				script {
 
-            echo 'This will always run'
+					gv.testApp()
 
-        }
+				}
 
-        success {
+			}
 
-            echo 'This will run only if successful'
+		}
 
-        }
+		stage("deploy") {
 
-        failure {
+			steps {
 
-            echo 'This will run only if failed'
+				echo 'deploying the applicaiton...'
 
-        }
+			}
 
-    }
+		}
+
+	}
 
 }
-
-
